@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inference-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inference
+  template:
+    metadata:
+      labels:
+        app: inference
+    spec:
+      containers:
+      - name: inference-container
+        image: namanlalit/infer
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - name: model-per-volume
+          mountPath: "/model"
+      volumes:
+      - name: model-per-volume
+        persistentVolumeClaim:
+          claimName: namanpvc

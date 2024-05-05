@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: training
+spec:
+  template:
+    spec:
+      containers:
+      - name: train-container
+        image: namanlalit/train
+        command: [ "python3", "main.py" , "--batch-size", "32", "--epochs", "1"]
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: "/model"
+          name: model-per-volume
+      volumes:
+      - name: model-per-volume
+        persistentVolumeClaim:
+          claimName: namanpvc
+      restartPolicy: Never
