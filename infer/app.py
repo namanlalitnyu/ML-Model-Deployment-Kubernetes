@@ -3,13 +3,13 @@ from torchvision import transforms
 from PIL import Image
 import torch.nn as nn
 import torch.nn.functional as F
-from flask import Flask, json, request
+from flask import Flask, request, render_template, send_from_directory
 import os
 
 app = Flask(__name__)
 device = torch.device('cpu')
+app.config["IMAGE"] = "./images/"
 
-#the code of the Net class needed to load the model
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -35,45 +35,58 @@ class Net(nn.Module):
         output = F.log_softmax(x, dim=1)
         return output
 
-#using form the example mnist code
-transform=transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.1307,), (0.3081,))
-    ])
+def transformer(input):
+    transform=transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+        ])
+    return transform(input)
 
-def predict(inputs):
-    inputs = inputs.to(device)
-    output = model(inputs).data.numpy().argmax()
-    return str(output)
+def inference(input):
+    model = Net()
+    model_dir = "/model"
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+    model_path = os.path.join(model_dir, "mnist_cnn.pt")
+    model.load_state_dict(torch.load(model_path))
+    model.eval()
+    output = model(input).squeeze().argmax().item()
+    return output
 
-
-@app.route('/inferResult', methods=['POST'])
-def inferResult():
+def get_inference(file):
     res = {}
-    file = request.files['image']
     if not file:
-        res['message'] = 'Error. Cannot find image'
-        res['Result'] = 'NA'
-    else:
-        res['message'] = 'Success'
-        image = Image.open(file)
-        image = transform(image).unsqueeze(0)
-        res['Result'] = predict(image)
-    print("Returning result json")
-    return json.dumps(res)
+        res['status'] = 'image missing'
+        return res
+    res['status'] = 'success'
+    image = Image.open(file.stream)
+    output = inference(process(image))
+    res['result'] = output
+    return res
+
+def process(input):
+    input = transformer(input)
+    return input.unsqueeze(0)
 
 
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-print("Welcome to inference part")
-model = Net()
+@app.route('/inferResult', methods=['GET', 'POST'])
+def inferResult():
+    if request.method == "GET":
+        return render_template("uploadImage.html")
+    if request.method == "POST":
+        if request.files:
+            image = request.files["image"]
+            image.save(os.path.join(app.config["IMAGE"], image.filename))
+            status = get_inference(image)
+            return render_template("uploadImage.html", uploaded_image=image.filename, inf_status=status)
 
-# Set the path for the ML model
-model_dir = "/model"
-if not os.path.exists(model_dir):
-    os.makedirs(model_dir)
-model_path = os.path.join(model_dir, "mnist_cnn.pt")
-model.load_state_dict(torch.load(model_path))
-model.eval()
+@app.route('/results/<filename>')
+def send_result(filename=''):
+    return send_from_directory(app.config["IMAGE"], filename)
 
 #run the server
 if __name__ == '__main__':

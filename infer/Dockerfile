@@ -9,6 +9,7 @@ WORKDIR /app
 
 # Copy the Python requirements file and install Python dependencies
 COPY ./ /app/
+ADD templates  /app/templates
 RUN pip install -r requirements.txt
 RUN pip install gunicorn
 

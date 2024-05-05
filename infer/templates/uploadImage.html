@@ -2,39 +2,32 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Upload Image</title>
+    <title>Verify Model</title>
 </head>
 <body>
   <div style="text-align: center;">
-    <h1>Upload Image of the Digit from the MNIST</h1>
+    <h1>Upload Image from the MNIST Dataset</h1>
     <div>
-      <form action="/upload" method="POST" enctype="multipart/form-data">
+      <form action="/inferResult" method="POST" enctype="multipart/form-data">
         <div class="form-group">
-          <label style="color:blue;font-size:36px;">Select image</label>
-          <br />
-          <br />
+          <label style="color:green;font-size:36px;">Select image</label>
           <br />
           <div class="custom-file">
             <input type="file" class="custom-file-input" name="image" id="image">
           </div>
           <br />
           <br />
-          <button type="submit" class="btn" style="color:red; border: none;">Upload</button>
+          <button type="submit" class="btn" style="color: red;">Upload</button>
       </form>
     </div>
-
-      
-      <br />
-      <br />
       <br />
       <div>
       {% if inf_status %}
         <p>Uploaded Image</p>
-        <img src="{{ url_for('send_uploaded_file', filename=uploaded_image) }}" />
+        <img src="{{ url_for('send_result', filename=uploaded_image) }}" />
         <br />
         <br />
-        {{inf_status}}
-  
+        <h4 style="color: blueviolet;"> The result that we get is: {{inf_status}} </h4>
       {% endif %}
     </div>
   </div>
